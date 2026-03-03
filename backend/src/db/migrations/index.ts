@@ -6,6 +6,8 @@ import migration004 from './004-repos-indexes'
 import migration005 from './005-repos-local-path-prefix'
 import migration006 from './006-git-token-to-credentials'
 
+import migration007 from './007-agent-instances'
+
 export const allMigrations: Migration[] = [
   migration001,
   migration002,
@@ -13,4 +15,5 @@ export const allMigrations: Migration[] = [
   migration004,
   migration005,
   migration006,
+  migration007,
 ]

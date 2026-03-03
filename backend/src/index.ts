@@ -40,8 +40,10 @@ import { sseAggregator } from './services/sse-aggregator'
 import { ensureDirectoryExists, writeFileContent, fileExists, readFileContent } from './services/file-operations'
 import { SettingsService } from './services/settings'
 import { opencodeServerManager } from './services/opencode-single-server'
-import { proxyRequest, proxyMcpAuthStart, proxyMcpAuthAuthenticate } from './services/proxy'
+import { proxyRequestToTarget } from './services/proxy'
 import { NotificationService } from './services/notification'
+import { InstanceService } from './services/instances'
+import { createAgentInstanceRoutes, createInstanceRoutes } from './routes/instances'
 
 import { logger } from './utils/logger'
 import { 
@@ -69,7 +71,7 @@ app.use('/*', cors({
     return trustedOrigins[0]
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-instance-id'],
   credentials: true,
 }))
 
@@ -81,6 +83,7 @@ import { DEFAULT_AGENTS_MD } from './constants'
 
 let ipcServer: IPCServer | undefined
 const gitAuthService = new GitAuthService()
+const instanceService = new InstanceService(db)
 
 async function ensureDefaultConfigExists(): Promise<void> {
   const settingsService = new SettingsService(db)
@@ -260,21 +263,38 @@ protectedApi.route('/memory', createMemoryRoutes(db))
 
 app.route('/api', protectedApi)
 
-app.post('/api/opencode/mcp/:name/auth', requireAuth, async (c) => {
-  const serverName = c.req.param('name')
-  const directory = c.req.query('directory')
-  return proxyMcpAuthStart(serverName, directory)
-})
+const protectedInstancesApi = new Hono()
+protectedInstancesApi.use('/*', requireAuth)
+protectedInstancesApi.route('/', createInstanceRoutes(instanceService))
+app.route('/api/instances', protectedInstancesApi)
 
-app.post('/api/opencode/mcp/:name/auth/authenticate', requireAuth, async (c) => {
-  const serverName = c.req.param('name')
-  const directory = c.req.query('directory')
-  return proxyMcpAuthAuthenticate(serverName, directory)
-})
+app.route('/api/agent', createAgentInstanceRoutes(instanceService))
 
 app.all('/api/opencode/*', requireAuth, async (c) => {
   const request = c.req.raw
-  return proxyRequest(request)
+  const instanceId = c.req.header('x-instance-id') || c.req.query('instanceId')
+
+  if (!instanceId) {
+    return c.json({ error: 'Missing instanceId' }, 400)
+  }
+
+  const session = c.get('session')
+  const user = c.get('user')
+  const canAccess = instanceService.canSessionAccessInstance(session.id, instanceId, user.role === 'admin')
+  if (!canAccess) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+
+  const baseUrl = instanceService.getBaseUrl(instanceId)
+  if (!baseUrl) {
+    return c.json({ error: 'Instance not found' }, 404)
+  }
+
+  const incomingUrl = new URL(request.url)
+  const cleanPathname = incomingUrl.pathname.replace(/^\/api\/opencode/, '')
+  const targetUrl = `${baseUrl}${cleanPathname}${incomingUrl.search}`
+
+  return proxyRequestToTarget(request, targetUrl)
 })
 
 const isProduction = ENV.SERVER.NODE_ENV === 'production'

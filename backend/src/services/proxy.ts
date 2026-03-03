@@ -94,15 +94,18 @@ export async function patchOpenCodeConfig(config: Record<string, unknown>): Prom
 
 export async function proxyRequest(request: Request) {
   const url = new URL(request.url)
-  
-  // Remove /api/opencode prefix from pathname before forwarding
   const cleanPathname = url.pathname.replace(/^\/api\/opencode/, '')
   const targetUrl = `${OPENCODE_SERVER_URL}${cleanPathname}${url.search}`
-  
+  return proxyRequestToTarget(request, targetUrl)
+}
+
+export async function proxyRequestToTarget(request: Request, targetUrl: string): Promise<Response> {
+  const url = new URL(request.url)
+
   if (url.pathname.includes('/permissions/')) {
     logger.info(`Proxying permission request: ${url.pathname}${url.search} -> ${targetUrl}`)
   }
-  
+
   try {
     const headers: Record<string, string> = {}
     request.headers.forEach((value, key) => {

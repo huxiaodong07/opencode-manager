@@ -35,6 +35,20 @@ import {
   PushSubscriptionRecordSchema,
   PushNotificationPayloadSchema,
 } from '../schemas/notifications'
+import {
+  ProviderKindSchema,
+  InstanceStatusSchema,
+  CapabilityFlagsSchema,
+  ProviderDescriptorSchema,
+  AgentInstanceSchema,
+  RegisterInstanceRequestSchema,
+  RegisterInstanceResponseSchema,
+  InstanceHeartbeatRequestSchema,
+  RotateInstanceTokenRequestSchema,
+  RotateInstanceTokenResponseSchema,
+  RevokeInstanceTokenRequestSchema,
+  InstanceAuthContextSchema,
+} from '../schemas/instance'
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>
 export type SettingsResponse = z.infer<typeof SettingsResponseSchema>
@@ -66,6 +80,19 @@ export type NotificationPreferences = z.infer<typeof NotificationPreferencesSche
 export type PushSubscriptionRequest = z.infer<typeof PushSubscriptionRequestSchema>
 export type PushSubscriptionRecord = z.infer<typeof PushSubscriptionRecordSchema>
 export type PushNotificationPayload = z.infer<typeof PushNotificationPayloadSchema>
+
+export type ProviderKind = z.infer<typeof ProviderKindSchema>
+export type InstanceStatus = z.infer<typeof InstanceStatusSchema>
+export type CapabilityFlags = z.infer<typeof CapabilityFlagsSchema>
+export type ProviderDescriptor = z.infer<typeof ProviderDescriptorSchema>
+export type AgentInstance = z.infer<typeof AgentInstanceSchema>
+export type RegisterInstanceRequest = z.infer<typeof RegisterInstanceRequestSchema>
+export type RegisterInstanceResponse = z.infer<typeof RegisterInstanceResponseSchema>
+export type InstanceHeartbeatRequest = z.infer<typeof InstanceHeartbeatRequestSchema>
+export type RotateInstanceTokenRequest = z.infer<typeof RotateInstanceTokenRequestSchema>
+export type RotateInstanceTokenResponse = z.infer<typeof RotateInstanceTokenResponseSchema>
+export type RevokeInstanceTokenRequest = z.infer<typeof RevokeInstanceTokenRequestSchema>
+export type InstanceAuthContext = z.infer<typeof InstanceAuthContextSchema>
 
 export { FetchError } from './errors'
 export type { ApiErrorResponse, ApiErrorCode, GitErrorCode } from './errors'
